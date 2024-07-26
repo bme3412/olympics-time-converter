@@ -34,7 +34,6 @@ const OlympicsScheduleApp = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const prevFiltersRef = useRef();
-
   const fetchAllSchedule = useCallback(async () => {
     if (loading) return;
     setLoading(true);
@@ -105,13 +104,20 @@ const OlympicsScheduleApp = () => {
       </h1>
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SelectInput
-            icon={<Flag className="h-5 w-5 text-gray-400 ml-3" />}
-            value={filters.country}
-            onChange={(e) => handleFilterChange("country", e.target.value)}
-            options={COUNTRIES}
-            placeholder="Select your team"
-          />
+          <div className="relative">
+            <SelectInput
+              icon={<Flag className="h-5 w-5 text-gray-400 ml-3" />}
+              value={filters.country}
+              onChange={(e) => handleFilterChange("country", e.target.value)}
+              options={COUNTRIES}
+              placeholder="Select your team"
+            />
+            {filters.country && (
+              <div className="absolute left-0 top-full mt-1 text-sm font-semibold text-gray-700">
+                Team {filters.country}
+              </div>
+            )}
+          </div>
           <SelectInput
             icon={<MapPin className="h-5 w-5 text-gray-400 ml-3" />}
             value={filters.viewingLocation}
@@ -174,8 +180,6 @@ const OlympicsScheduleApp = () => {
     </div>
   );
 };
-
-
 
 const formatDate = (dateString) => {
   try {

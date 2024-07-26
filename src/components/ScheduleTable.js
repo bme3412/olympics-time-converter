@@ -1,88 +1,76 @@
 import React from 'react';
-import { format, parseISO, addDays, isSameDay } from 'date-fns';
-import { CountryFlag } from './ui/OlympicsComponents';
+import { format, parseISO } from 'date-fns';
 import ParisStartTime from './ui/ParisStartTime';
 import { convertTime } from '../lib/utils';
+import { CountryFlag } from './ui/OlympicsComponents';
 
-const LocalStartTime = ({ startTime, date, viewingLocation }) => {
-  if (!startTime || !date || !viewingLocation) {
-    console.error('LocalStartTime: Missing required props', { startTime, date, viewingLocation });
+const LocalStartTime = ({ startTime, viewingLocation }) => {
+  if (!startTime || !viewingLocation) {
     return <span>Invalid data</span>;
   }
 
   try {
-    const formattedStartTime = startTime.includes('T') ? startTime : `${date}T${startTime}`;
-    console.log('LocalStartTime: Formatted start time', formattedStartTime);
-
-    const parisTime = parseISO(formattedStartTime);
-    console.log('LocalStartTime: Parsed Paris time', parisTime);
-    
-    if (isNaN(parisTime.getTime())) {
-      throw new Error('Invalid date or time');
-    }
-
-    const localTime = convertTime(formattedStartTime, viewingLocation);
-    console.log('LocalStartTime: Converted local time', localTime);
-
-    const [timeString, dayDiff] = localTime.split(' ');
-    console.log('LocalStartTime: Time string and day diff', { timeString, dayDiff });
-    
-    const localDate = addDays(parisTime, dayDiff ? parseInt(dayDiff) : 0);
-    console.log('LocalStartTime: Local date', localDate);
-
-    let displayTime = format(localDate, 'HH:mm');
-    
-    if (!isSameDay(parisTime, localDate)) {
-      displayTime = format(localDate, 'MMM dd, HH:mm');
-    }
-
-    console.log('LocalStartTime: Final display time', displayTime);
-
+    const convertedTime = convertTime(startTime, viewingLocation);
     return (
-      <div className="flex items-center">
-        <span>{displayTime}</span>
-        <CountryFlag country={viewingLocation} className="ml-2" />
+      <div className="flex items-center space-x-2">
+        <span>{convertedTime}</span>
+        <span className="text-xs text-gray-500">({viewingLocation})</span>
       </div>
     );
   } catch (error) {
-    console.error('Error in LocalStartTime:', error, { startTime, date, viewingLocation });
+    console.error("Error in LocalStartTime:", error);
     return <span>Unable to display time</span>;
   }
 };
 
 const ScheduleTable = ({ schedule, viewingLocation }) => {
-  const formatDate = (dateString) => {
+  const formatDate = (dateTimeString) => {
     try {
-      return format(parseISO(dateString), 'MMM dd, yyyy');
+      const date = parseISO(dateTimeString);
+      return format(date, 'MMM dd, yyyy');
     } catch (error) {
-      console.error('Error formatting date:', error, 'Date string:', dateString);
+      console.error('Error formatting date:', error, 'Date string:', dateTimeString);
       return 'Invalid date';
     }
   };
 
-  const formatTime = (timeString) => {
+  const formatTime = (dateTimeString) => {
     try {
-      return format(parseISO(timeString), 'HH:mm');
+      const date = parseISO(dateTimeString);
+      return format(date, 'HH:mm');
     } catch (error) {
-      console.error('Error formatting time:', error, 'Time string:', timeString);
+      console.error('Error formatting time:', error, 'Time string:', dateTimeString);
       return 'Invalid time';
     }
   };
 
   const renderTeams = (team1, team2) => {
-    if (!team1 || !team2) return 'N/A';
+    if (!team1 && !team2) return 'N/A';
     return (
       <div className="flex items-center">
-        <span>{team1}</span>
-        <CountryFlag country={team1} />
-        <span className="mx-2">vs</span>
-        <span>{team2}</span>
-        <CountryFlag country={team2} />
+        {team1 && (
+          <div className="flex items-center">
+            <CountryFlag country={team1} className="h-4 w-6" />
+            <span className="ml-1.5">{team1}</span>
+          </div>
+        )}
+        {team1 && team2 && <span className="mx-2 text-gray-500">vs</span>}
+        {team2 && (
+          <div className="flex items-center">
+            <CountryFlag country={team2} className="h-4 w-6" />
+            <span className="ml-1.5">{team2}</span>
+          </div>
+        )}
       </div>
     );
   };
 
   const tableHeaders = ["Date", "Sport", "Event", "Teams", "Start Time (Paris)", "Start Time (Local)", "Round"];
+
+  // Sort the schedule by date and time
+  const sortedSchedule = [...schedule].sort((a, b) => {
+    return new Date(a.StartTime) - new Date(b.StartTime);
+  });
 
   return (
     <div className="bg-white shadow rounded-lg overflow-x-auto">
@@ -97,9 +85,9 @@ const ScheduleTable = ({ schedule, viewingLocation }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {schedule.map((event) => (
-            <tr key={`${event.Date}-${event.Sport}-${event.Sport_subTitle}-${event.StartTime}`} className="hover:bg-gray-50">
-              <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(event.Date)}</td>
+          {sortedSchedule.map((event) => (
+            <tr key={`${event.StartTime}-${event.Sport}-${event.Sport_subTitle}`} className="hover:bg-gray-50">
+              <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(event.StartTime)}</td>
               <td className="px-3 py-4 whitespace-nowrap text-sm">{event.Sport}</td>
               <td className="px-3 py-4 whitespace-nowrap text-sm">{event.Sport_subTitle}</td>
               <td className="px-3 py-4 whitespace-nowrap text-sm">
@@ -112,7 +100,6 @@ const ScheduleTable = ({ schedule, viewingLocation }) => {
                 {viewingLocation ? (
                   <LocalStartTime 
                     startTime={event.StartTime}
-                    date={event.Date}
                     viewingLocation={viewingLocation}
                   />
                 ) : 'Select location'}

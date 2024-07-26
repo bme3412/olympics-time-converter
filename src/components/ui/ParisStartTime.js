@@ -1,8 +1,10 @@
 import React from 'react';
 
 const ParisStartTime = ({ startTime }) => {
-  // Remove "(Paris)" from the startTime if it's present
-  const cleanTime = startTime.replace(/\s*\(Paris\)\s*/, '').trim();
+  // Check if startTime is defined before using replace
+  const cleanTime = startTime 
+    ? startTime.replace(/\s*\(Paris\)\s*/, '').trim()
+    : 'N/A';
   
   return (
     <div className="flex items-center">
