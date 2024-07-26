@@ -1,6 +1,6 @@
 // src/lib/utils.js
 
-import { parseISO, format, addHours, isValid } from "date-fns";
+import { parseISO, format, addHours, isValid, differenceInCalendarDays } from "date-fns";
 import { TIME_ZONE_OFFSETS } from './constants';
 
 export function getCountryCode(countryName) {
@@ -35,7 +35,19 @@ export function convertTime(parisTime, targetLocation) {
     }
     const offsetDiff = TIME_ZONE_OFFSETS[targetLocation] - TIME_ZONE_OFFSETS["France"];
     const targetDate = addHours(parisDate, offsetDiff);
-    return format(targetDate, "yyyy-MM-dd HH:mm:ss");
+    
+    const dayDiff = differenceInCalendarDays(targetDate, parisDate);
+    const timeString = format(targetDate, "HH:mm");
+    
+    if (dayDiff === 0) {
+      return timeString;
+    } else if (dayDiff === 1) {
+      return `${timeString} +1`;
+    } else if (dayDiff === -1) {
+      return `${timeString} -1`;
+    } else {
+      return `${timeString} ${dayDiff > 0 ? '+' : ''}${dayDiff}`;
+    }
   } catch (error) {
     console.error("Error converting time:", error);
     return "Invalid time";
